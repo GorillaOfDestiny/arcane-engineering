@@ -50,7 +50,6 @@ class Battery(component):
     def step(self):
         pass
 
-
 class Wire(component):
     def __init__(self,level = None,energy = 0,name = "wire"):
         super().__init__(level = level,energy = energy,name = name)
@@ -163,6 +162,7 @@ def connect(comp_list: list):
         new_comp_list.append(wire_obj)
         #new_comp_list.append(comp_list[j])
     return(new_comp_list)
+
 def wrap_around(end_point,wrap_to = [0,0],buffer = 3.,ax = None):
     if ax is None:
         ax = plt.gca()
@@ -170,7 +170,6 @@ def wrap_around(end_point,wrap_to = [0,0],buffer = 3.,ax = None):
                           [end_point[1],end_point[1],end_point[1] - buffer,end_point[1] - buffer,end_point[1],end_point[1]]])
     ax.plot(wire_line[0],wire_line[1])
 
-    
 
 def plot(comp_list,buffer = 3.):
     n_components = len(comp_list)

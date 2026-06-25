@@ -49,6 +49,8 @@ class Battery(component):
         return(end_point)
     def step(self):
         pass
+
+
 class Wire(component):
     def __init__(self,level = None,energy = 0,name = "wire"):
         super().__init__(level = level,energy = energy,name = name)
@@ -185,18 +187,20 @@ def plot(comp_list,buffer = 3.):
 
 
 if __name__ == "__main__":
+
+
+
+
     b_test = Battery(2,name = "Battery 1")
     b_test2 = Battery(2,name = "Battery 2")
-    s_test = Switch(2,energy = 0,name = "Switch")
+    s_test = Switch(2,name = "Switch")
     c_test = Caster(2,name = "Caster 1")
     test_comp_list = [b_test,b_test2,s_test,c_test]
     new_comp_list = connect(test_comp_list)
-    #print(new_comp_list)
-    print(new_comp_list)
-    #print(new_comp_list)
-    #b_test.print_info()
-    #c_test.print_info()
-    #plot(new_comp_list)
+
+
+    #--------simulation
+    plot(new_comp_list)
     s_test.print_info()
     t = []
     n_t_steps = 400
@@ -208,14 +212,17 @@ if __name__ == "__main__":
         t.append(t_step)
         for comp in new_comp_list:
             comp.step()
-        #print(b_test.energy)
         for i in range(len(new_comp_list)):
             Es[i,t_step] = new_comp_list[i].energy
-
-    # plt.plot(t,E_battery,label = "Battery 1")
-    # plt.plot(t,E_battery2,label = "Battery 2")
-    # plt.plot(t,E_caster,label = "Caster")
+    check_wires = False
+    
     for i,nc in enumerate(new_comp_list):
-        plt.plot(t,Es[i],label = nc.name)
+        if check_wires:
+            plt.plot(t,Es[i],label = nc.name)
+        elif check_wires is False and "wire" not in nc.name:
+            plt.plot(t,Es[i],label = nc.name)
+        
     plt.legend()
+    plt.ylabel("Energy")
+    plt.xlabel("Time Step")
     plt.show()

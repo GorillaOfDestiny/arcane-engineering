@@ -11,7 +11,9 @@ class component():
         self.energy = energy #amount of energy in the component
         self.level = level
         self.name = name
-        self.allow_transfer = True
+        self.allow_input = True
+        self.allow_output = True
+        self.max_energy = 1
         #all components need a drawing function
         #   and also connecting points I think
         #   for now, let's just get them in one line
@@ -28,6 +30,7 @@ class Battery(component):
         super().__init__(level = level,energy = energy,name = name)
         if level == 0:
             self.requires_input = False
+        self.max_energy = 100
 
     def plot(self,start_point = (0,0),x_size = 0.25,y_size = 1,ax = None):
         if ax is None:
@@ -44,40 +47,37 @@ class Battery(component):
         ax.plot(line2_x,line2_y,color = 'k',ls = "-")
         end_point = [start_point[0] + x_size,start_point[1]]
         return(end_point)
-
+    def step(self):
+        pass
 class Wire(component):
-    def __init__(self,level = 1,energy = 0,name = "wire"):
-        super().__init__(level = None,energy = energy,name = name)
+    def __init__(self,level = None,energy = 0,name = "wire"):
+        super().__init__(level = level,energy = energy,name = name)
         self.energy_in_rate = 1
         self.energy_out_rate = 1
         self.color = 'r'
     def step(self):
         
-        if self.previous_comp.energy > 0 and self.previous_comp.allow_transfer:
+        if self.previous_comp.energy > 0 and self.previous_comp.allow_output and self.energy < 1:
             self.previous_comp.energy -=1
             self.energy += 1
-        if self.energy > 0:
+        if self.energy > 0 and self.next_comp.allow_input  and self.next_comp.energy + 1 < self.next_comp.max_energy:
             self.next_comp.energy += 1
             self.energy -= 1
-        # print("-------------")
-        # print("wire: ",self.energy)
-        # print("previous: ",self.previous_comp.energy)
-        # print("next: ",self.next_comp.energy)
+
     def plot(self,start_point = [0,0],x_size = 3,y_size = 0,ax = None):
         if ax is None:
             ax = plt.gca()
         line1 = np.array([[start_point[0],start_point[0] + x_size],
                           [start_point[1],start_point[1] + y_size]])
         ax.plot(line1[0,:],line1[1,:],color = self.color,ls = "-")
-
         return(line1[:,1])
         
 class Caster(component):
     def __init__(self,level = 1,energy = 0,name = "caster"):
         super().__init__(level = level,requires_input=True,energy = energy,name = name)
         self.cast_threshold = 100
-        self.allow_transfer=False
-
+        self.allow_output=False
+        self.max_energy = self.cast_threshold+1
     def cast(self):
         if self.energy>= self.cast_threshold:
             self.energy = 0
@@ -104,15 +104,47 @@ class Caster(component):
             self.cast()
         else:
             pass
+
+class Switch(component):
+    def __init__(self,level = None,energy = 0,name = "switch",start_on = False):
+        super().__init__(level = level,requires_input=True,energy = energy,name = name)
+        self.allow_input = start_on
+        self.allow_output = start_on
+        self.color = 'k'
+    def step(self):
+        if self.allow_input and self.previous_comp.energy > 0 and self.previous_comp.allow_output:
+
+            self.previous_comp.energy -=1
+            self.energy += 1
+        if self.energy > 0 and self.allow_output and self.next_comp.allow_input:
+
+            self.next_comp.energy += 1
+            self.energy -= 1
+    def plot(self,start_point = (0,0),x_size = 2,y_size = 0.25,ax = None):
+        if ax is None:
+            ax = plt.gca()
+        line1 = np.array([[start_point[0],start_point[0] + x_size*(1/3),start_point[0] + x_size*(2/3)],
+                          [start_point[1],start_point[1],start_point[1] + y_size]])
+        line2 = np.array([[start_point[0] + (2/3)*x_size,start_point[0] + x_size],[start_point[1],start_point[1]]])
+        ax.plot(line1[0,:],line1[1,:],color = self.color,ls = "-")
+        ax.plot(line2[0,:],line2[1,:],color = self.color,ls = "-")
+        end_point = [start_point[0] + x_size,start_point[1] + 0]
+        return(end_point)
+    def toggle(self):
+        self.allow_input = True
+        self.allow_output = True
+
 def connect(comp_list: list):
     n_components = len(comp_list)
     new_comp_list = []
+    wire_i = 0
     for i in range(n_components):
-        print(i)
+        #print(i)
         j = (i+1)%n_components
         
         if comp_list[j].requires_input:
-            wire_obj = Wire(None,0)
+            wire_obj = Wire(None,0,name = f'wire {wire_i}')
+            wire_i += 1
             comp_list[i].next_comp = wire_obj
             comp_list[j].previous_comp = wire_obj
             wire_obj.previous_comp = comp_list[i]
@@ -154,26 +186,36 @@ def plot(comp_list,buffer = 3.):
 
 if __name__ == "__main__":
     b_test = Battery(2,name = "Battery 1")
+    b_test2 = Battery(2,name = "Battery 2")
+    s_test = Switch(2,energy = 0,name = "Switch")
     c_test = Caster(2,name = "Caster 1")
-    test_comp_list = [b_test,c_test]
+    test_comp_list = [b_test,b_test2,s_test,c_test]
     new_comp_list = connect(test_comp_list)
     #print(new_comp_list)
-    
+    print(new_comp_list)
     #print(new_comp_list)
-    b_test.print_info()
-    c_test.print_info()
+    #b_test.print_info()
+    #c_test.print_info()
     #plot(new_comp_list)
-
+    s_test.print_info()
     t = []
-    E_battery = []
-    E_caster = []
-    for t_step in range(200):
+    n_t_steps = 400
+    Es = np.zeros((len(new_comp_list),n_t_steps))
+    for t_step in range(n_t_steps):
+        
+        if t_step == 100:
+            s_test.toggle()
         t.append(t_step)
         for comp in new_comp_list:
             comp.step()
         #print(b_test.energy)
-        E_battery.append(b_test.energy)
-        E_caster.append(c_test.energy)
-    plt.plot(t,E_battery)
-    plt.plot(t,E_caster)
+        for i in range(len(new_comp_list)):
+            Es[i,t_step] = new_comp_list[i].energy
+
+    # plt.plot(t,E_battery,label = "Battery 1")
+    # plt.plot(t,E_battery2,label = "Battery 2")
+    # plt.plot(t,E_caster,label = "Caster")
+    for i,nc in enumerate(new_comp_list):
+        plt.plot(t,Es[i],label = nc.name)
+    plt.legend()
     plt.show()

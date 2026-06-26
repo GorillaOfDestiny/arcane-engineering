@@ -100,11 +100,13 @@ class Junction(component):
         self.energy_in_rate = 1
         self.energy_out_rate = 1
         
+        if n_inputs < 1 or n_outputs < 1:
+            raise CircuitException(f"In {self.name} n_inputs and n_outputs must be >= 1. Instead found n_inputs = {self.n_inputs},n_outputs = {self.n_outputs}")
         
-        if self.n_inputs != 1 or self.n_outputs != 1:
+        if self.n_inputs != 1 and self.n_outputs != 1:
             #check this for simplicity. In theory we can have a 3 input 2 output case work but for this code 
             # I think demanding at least one be 1 works better
-            CircuitException(f"In {self.name} either n_inputs or n_outputs must be 1. Instead found n_inputs = {self.n_inputs},n_outputs = {self.n_outputs}")
+           raise CircuitException(f"In {self.name} either n_inputs or n_outputs must be 1. Instead found n_inputs = {self.n_inputs},n_outputs = {self.n_outputs}")
         self.color = 'purple'
 
     def step(self):

@@ -1,0 +1,22 @@
+[project]
+name = "arcane-engineering"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10,<4"
+dependencies = [
+    "matplotlib>=3.10.9",
+    "numpy>=2.2.6",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+]
+
+[project.scripts]
+arceng = "arcane_engineering.main:main"
+
+[build-system]
+requires = ["uv_build>=0.11.24,<0.12"]
+build-backend = "uv_build"

@@ -1,1 +1,12 @@
+# ignore all dot files except those allow-listed
+.*
+
+!.pre-commit-config.yaml
+!.python-version
+!.gitignore
+
+# don't check in build artifacts
+__pycache__
+dist
+*.egg-info
 *.png
